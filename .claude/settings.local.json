@@ -19,14 +19,37 @@
       "Bash(playwright install:*)",
       "Bash(pyright .)",
       "Bash(ruff format:*)",
-      "Skill(pr-review)"
+      "Skill(pr-review)",
+      "mcp__plugin_claude-mem_mcp-search__search",
+      "mcp__plugin_claude-mem_mcp-search____IMPORTANT",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(curl:*)",
+      "Bash(tail:*)",
+      "Bash(claude-mem:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(bun:*)",
+      "Bash(CLAUDE_PLUGIN_ROOT=\"$PWD/plugin\" bun:*)",
+      "Bash(pgrep:*)",
+      "Bash(npm run worker:restart)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(git clone:*)",
+      "Bash(npm install)",
+      "Bash(npm run worker:start)",
+      "Bash(npm run worker:status)",
+      "mcp__plugin_claude-mem_mcp-search__timeline",
+      "mcp__plugin_claude-mem_mcp-search__get_observations",
+      "WebFetch(domain:github.com)",
+      "Bash(ls:*)",
+      "Bash(npm pack:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "github"
-  ],
+  "enabledMcpjsonServers": [],
   "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true
+    "pyright-lsp@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": true
   }
 }
