@@ -6,7 +6,20 @@
       "Bash(git remote add:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Skill(fastapi-patterns)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(ruff check:*)",
+      "Bash(pytest:*)",
+      "WebSearch",
+      "Skill(python-testing)",
+      "Skill(webapp-testing)",
+      "Bash(python:*)",
+      "Bash(playwright install:*)",
+      "Bash(pyright .)",
+      "Bash(ruff format:*)",
+      "Skill(pr-review)"
     ]
   },
   "enableAllProjectMcpServers": true,
