@@ -43,7 +43,11 @@
       "mcp__plugin_claude-mem_mcp-search__get_observations",
       "WebFetch(domain:github.com)",
       "Bash(ls:*)",
-      "Bash(npm pack:*)"
+      "Bash(npm pack:*)",
+      "Bash(npm search:*)",
+      "Bash(npm install:*)",
+      "Bash(bash:*)",
+      "Bash(git restore .claude/skills/fastapi-patterns .claude/skills/python-testing .claude/skills/systematic-debugging)"
     ]
   },
   "enableAllProjectMcpServers": true,

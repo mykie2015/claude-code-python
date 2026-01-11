@@ -15,3 +15,5 @@ build/
 .ruff_cache/
 .pyright/
 .env
+node_modules/
+package-lock.json
