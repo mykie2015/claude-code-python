@@ -1,0 +1,22 @@
+name: PR - Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: \${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-20250514
+          prompt: |
+            Review this PR using .claude/agents/code-reviewer.md standards.
+            Run `git diff origin/main...HEAD` to see changes.
+            Report your findings as a PR comment.

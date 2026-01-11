@@ -1,0 +1,55 @@
+{
+  "includeCoAuthoredBy": true,
+  "env": {
+    "INSIDE_CLAUDE_CODE": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "120000",
+    "BASH_MAX_TIMEOUT_MS": "300000"
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && .claude/hooks/skill-eval.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo \"unknown\"); [ \"$CURRENT_BRANCH\" != \"main\" ] || { echo '{\"block\": true, \"message\": \"Cannot edit on main branch. Create a feature branch first.\"}' >&2; exit 2; }",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && FILE_PATH=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [[ \"$FILE_PATH\" =~ \\.py$ ]]; then ruff format \"$FILE_PATH\" 2>/dev/null && echo '{\"feedback\": \"Formatted with ruff.\", \"suppressOutput\": true}' || echo '{\"feedback\": \"Formatting skipped.\", \"suppressOutput\": true}'; fi",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && FILE_PATH=\"$CLAUDE_TOOL_INPUT_FILE_PATH\"; if [[ \"$FILE_PATH\" =~ \\.py$ ]] && [[ \"$FILE_PATH\" =~ \\.test\\.py$|^tests/ ]]; then echo '{\"feedback\": \"Running tests...\"}' >&2; pytest \"$FILE_PATH\" -v --tb=short 2>&1 | tail -20; fi",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
