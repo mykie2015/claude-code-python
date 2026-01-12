@@ -125,6 +125,18 @@ class RefreshResponse(BaseModel):
     expires_in: int
 
 
+class LogoutRequest(BaseModel):
+    """Logout request."""
+
+    refresh_token: str
+
+
+class LogoutResponse(BaseModel):
+    """Logout response."""
+
+    message: str = "Successfully logged out"
+
+
 # ============ Helper Functions ============
 
 
@@ -405,3 +417,17 @@ async def refresh_token(request: RefreshRequest) -> RefreshResponse:
         token_type="bearer",
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+
+
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    status_code=status.HTTP_200_OK,
+    responses={},
+)
+async def logout(request: LogoutRequest) -> LogoutResponse:
+    """Logout and revoke refresh token."""
+    # Add to revoked tokens (in-memory, grows unbounded in MVP)
+    REVOKED_REFRESH_TOKENS.add(request.refresh_token)
+
+    return LogoutResponse()
