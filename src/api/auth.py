@@ -111,6 +111,20 @@ class RegisterResponse(BaseModel):
     message: str = "Registration successful"
 
 
+class RefreshRequest(BaseModel):
+    """Refresh token request."""
+
+    refresh_token: str
+
+
+class RefreshResponse(BaseModel):
+    """Refresh token response."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
 # ============ Helper Functions ============
 
 
@@ -173,6 +187,28 @@ MOCK_USERS: dict[str, dict] = {
 # User storage for registration (in-memory for MVP)
 REGISTERED_USERS: dict[str, dict] = {}
 USER_ID_COUNTER = {"next_id": 3}  # Start after existing mock users
+
+# Refresh token storage (in-memory for MVP)
+REVOKED_REFRESH_TOKENS: set[str] = set()
+
+
+def create_refresh_token(data: dict) -> str:
+    """Create a JWT refresh token with longer expiry."""
+    to_encode = data.copy()
+    to_encode.update({"token_type": "refresh"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
+    """Decode and validate a JWT token."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
 
 
 # ============ Endpoints ============
@@ -330,4 +366,42 @@ async def register(request: RegisterRequest) -> RegisterResponse:
     return RegisterResponse(
         id=user_id,
         email=request.email,
+    )
+
+
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"model": ErrorResponse, "description": "Invalid or expired refresh token"},
+    },
+)
+async def refresh_token(request: RefreshRequest) -> RefreshResponse:
+    """Refresh access token using refresh token."""
+    # Check if token is revoked
+    if request.refresh_token in REVOKED_REFRESH_TOKENS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+        )
+
+    # Decode and validate refresh token
+    payload = decode_token(request.refresh_token)
+
+    if payload.get("token_type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type",
+        )
+
+    # Create new access token
+    access_token = create_access_token(
+        {"sub": payload.get("sub"), "user_id": payload.get("user_id")}
+    )
+
+    return RefreshResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
