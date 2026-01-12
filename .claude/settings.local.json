@@ -48,7 +48,22 @@
       "Bash(npm install:*)",
       "Bash(bash:*)",
       "Bash(git restore .claude/skills/fastapi-patterns .claude/skills/python-testing .claude/skills/systematic-debugging)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git worktree add:*)",
+      "Bash(git -C /Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp branch:*)",
+      "Bash(git -C /Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp log --oneline -10)",
+      "Bash(git -C /Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp status:*)",
+      "Bash(git -C /Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp diff --stat)",
+      "Bash(git -C /Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp add src/config.py tests/test_config.py .env.example pyproject.toml)",
+      "Bash(git -C /Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp commit -m \"$\\(cat <<''EOF''\nfeat: add environment configuration with Pydantic-Settings\n\n- Add Settings class with env file support using pydantic-settings\n- Add config test verifying environment variable loading\n- Update dependencies to include pydantic-settings\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C /Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp log -1 --stat)",
+      "Skill(frontend-design)",
+      "WebFetch(domain:minimax-algeng-chat-tts-us.oss-us-east-1.aliyuncs.com)",
+      "Bash(git merge-base:*)",
+      "Bash(gh pr create:*)",
+      "Bash(git worktree list)",
+      "Bash(git worktree remove:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
