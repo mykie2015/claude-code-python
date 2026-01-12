@@ -6,11 +6,14 @@ from fastapi import APIRouter, HTTPException, Request, status
 from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr, field_validator
 
-# JWT configuration - in production, use environment variables
-SECRET_KEY = "your-secret-key-change-in-production"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-MFA_TOKEN_EXPIRE_MINUTES = 5
+from src.config import settings
+
+# Use settings from config
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+MFA_TOKEN_EXPIRE_MINUTES = settings.MFA_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
