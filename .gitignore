@@ -16,4 +16,5 @@ build/
 .pyright/
 .env
 node_modules/
+.worktrees/
 package-lock.json
