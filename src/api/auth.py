@@ -79,6 +79,38 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
+class RegisterRequest(BaseModel):
+    """Registration request."""
+
+    email: EmailStr
+    password: str
+    country_code: str
+
+    @field_validator("country_code")
+    @classmethod
+    def validate_country_code(cls, v: str) -> str:
+        if len(v) != 2:
+            raise ValueError("Country code must be 2 characters")
+        return v.upper()
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one number")
+        return v
+
+
+class RegisterResponse(BaseModel):
+    """Registration response."""
+
+    id: int
+    email: str
+    message: str = "Registration successful"
+
+
 # ============ Helper Functions ============
 
 
@@ -137,6 +169,10 @@ MOCK_USERS: dict[str, dict] = {
         "mfa_secret": None,
     },
 }
+
+# User storage for registration (in-memory for MVP)
+REGISTERED_USERS: dict[str, dict] = {}
+USER_ID_COUNTER = {"next_id": 3}  # Start after existing mock users
 
 
 # ============ Endpoints ============
@@ -259,4 +295,39 @@ async def verify_mfa(
         access_token=access_token,
         token_type="bearer",
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"model": ErrorResponse, "description": "Email already registered or invalid input"},
+    },
+)
+async def register(request: RegisterRequest) -> RegisterResponse:
+    """Register a new user."""
+    # Check if email already exists
+    if request.email in MOCK_USERS or request.email in REGISTERED_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    # Create new user
+    user_id = USER_ID_COUNTER["next_id"]
+    USER_ID_COUNTER["next_id"] += 1
+
+    REGISTERED_USERS[request.email] = {
+        "id": user_id,
+        "email": request.email,
+        "password_hash": get_password_hash(request.password),
+        "mfa_enabled": False,
+        "mfa_secret": None,
+    }
+
+    return RegisterResponse(
+        id=user_id,
+        email=request.email,
     )
