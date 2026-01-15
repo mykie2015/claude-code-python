@@ -63,7 +63,10 @@
       "Bash(git merge-base:*)",
       "Bash(gh pr create:*)",
       "Bash(git worktree list)",
-      "Bash(git worktree remove:*)"
+      "Bash(git worktree remove:*)",
+      "Bash(git remote:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
