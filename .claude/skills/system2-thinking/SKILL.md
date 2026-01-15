@@ -10,10 +10,12 @@ description: Apply deliberate reasoning for complex design decisions. Use when e
 Apply structured deliberative reasoning for complex design and architectural decisions. This skill helps explore multiple paths, analyze trade-offs systematically, and select optimal solutions before implementation.
 
 **When to use:**
-- Exploring multiple design/architecture options
 - Making architectural or UX decisions with trade-offs
 - Researching and synthesizing information from multiple sources
 - When "System 1" fast intuition might miss important considerations
+- **Test-Time Compute**: When you need to "think longer" by iterating on internal drafts
+- **Self-Correction**: When complex logic requires an explicit verification loop to catch errors
+- **Persistence**: When you need to track the history of major architectural decisions
 
 ## Core Principles
 
@@ -25,6 +27,8 @@ System 2 thinking contrasts with System 1 (fast, intuitive, error-prone):
 | Single path | Multiple alternatives |
 | Confirmation bias | Systematic analysis |
 | "Just do it" | "What are the options?" |
+| One-shot generation | **Iterative Drafting & Self-Correction** |
+| Assumes correctness | **Verifies logic internally** |
 
 ## Workflow
 
@@ -48,7 +52,18 @@ For each path, document:
 - **Complexity**: Implementation difficulty
 - **Trade-offs**: What is gained vs. sacrificed
 
-### 3. Select Optimal Path
+### 3. Simulate & Self-Correct (Test-Time Compute)
+
+Before final selection, apply "Test-Time Compute" by simulating the execution of the top candidates:
+
+1. **Drafting**: Mentally (or via scratchpad) draft the core logic/flow.
+2. **Critique**: Actively look for flaws, edge cases, or logical gaps.
+    *   "Self-Correction Loop": *If I implement this, where will it break?*
+3. **Refine**: Fix the identified errors in the draft.
+
+*Goal: Iterate on internal drafts before committing to a solution.*
+
+### 4. Select Optimal Path
 
 Choose based on:
 - Best fit for user needs
@@ -56,72 +71,38 @@ Choose based on:
 - Extensibility for future requirements
 - Alignment with existing patterns
 
-### 4. Validate with External Research
+### 5. Validate with External Research
 
 For non-trivial decisions, validate with:
 - Web search for best practices
 - Documentation lookup (Context7)
-- AI assistant consultation (Gemini, Claude, etc.)
+### 6. Persist Decision
 
-## Example: Skeleton Overlay UI Design
+Log the thinking process for future reference.
 
-### User Request
-"Design UI for skeleton overlay on tennis stroke video with 5 phases"
+```bash
+python3 .claude/skills/system2-thinking/scripts/decision_tracker.py log \
+    --topic "[Topic]" \
+    --draft "[Initial thought]" \
+    --critique "[Analysis/Critique]" \
+    --final "[Selected Path]"
+```
 
-### Step 1: Explore Paths
+### 7. Review & Refine (Feedback Loop)
 
-1. **Canvas Overlay** - Draw skeleton directly on video canvas
-2. **Header Button** - Modal/popup overlay toggled from header
-3. **Transport Bar** - Controls integrated into video playback bar
-4. **Right Panel** - Dedicated sidebar for skeleton info
-5. **Toggle Mode + Interactive Panel** - Hybrid: transport toggle + right panel details
+When new information arises or a decision is proven right/wrong, log feedback to improve future context.
 
-### Step 2: Analyze
+```bash
+# First find the decision ID
+python3 .claude/skills/system2-thinking/scripts/decision_tracker.py search "[Topic]"
 
-| Path | Pros | Cons |
-|------|------|------|
-| Canvas Overlay | Seamless, performant | No controls visible |
-| Header Button | Clean UI | Modal disrupts flow |
-| Transport Bar | iMovie-style familiar | Limited space |
-| Right Panel | Rich info | Complex, takes space |
-| Hybrid | Best of both | More components |
+# Add feedback
+python3 .claude/skills/system2-thinking/scripts/decision_tracker.py add-feedback \
+    --id [ID] \
+    --content "After implementation, we found that [new insight]... next time consider [improvement]"
+```
 
-### Step 3: Select
-**Toggle Mode + Interactive Panel** - Balances simplicity with functionality, follows existing patterns.
 
-### Step 4: Validate with External Research
-Used Gemini to get phase-specific requirements for tennis biomechanics.
-
-## Tennis Stroke Phases Reference
-
-From Gemini research, phase-specific requirements:
-
-**Phase 1: Preparation (Green)**
-- Split Step Indicator: pressure ring under feet
-- Shoulder Rotation Angle: 2D arc display
-- Unit Turn Marker: shoulder-hip connection line
-- Center of Gravity: balance point dot
-
-**Phase 2: Backswing (Yellow)**
-- Racket Tip Path: yellow trail/vector
-- Elbow Flexion Angle: live degree readout
-- Loading Indicator: dominant leg highlight
-- Hip vs. Shoulder Gap: X-factor visualization
-
-**Phase 3: Contact (Red)**
-- Impact Point: flash effect at contact
-- Shoulder-Elbow-Wrist: straight line check
-- Knee Extension: vertical force arrow
-- Head Stability: fixed crosshair on eyes
-
-**Phase 4: Follow-through (Blue)**
-- Extension Length: shoulder-to-racket distance
-- Deceleration Heatmap: skeleton ghosts
-- Rotation Completion: circular arrow
-
-**Phase 5: Recovery (Purple)**
-- Crossover Step: ground path tracking
-- Balance Recovery: neutral stance timer
 
 ## Practical Prompts
 
@@ -142,15 +123,57 @@ Use these as templates:
 - Recommend best approach with justification"
 ```
 
+```
+"Using a 'Test-Time Compute' approach:
+1. Draft a solution for [problem]
+2. Critically analyze the draft for 3 potential errors or limitations
+3. Self-correct these errors
+4. Present the final refined solution"
+```
+
+## Example: High-Scale Database Selection
+
+### User Request
+"Determine the backing store for a new User Activity Feed feature (10k writes/sec)."
+
+### Step 1: Explore Paths
+
+1.  **PostgreSQL** - Use existing relational cluster
+2.  **Cassandra/Scylla** - Wide-column write-optimized store
+3.  **DynamoDB** - Managed serverless NoSQL
+4.  **Redis + SQL** - Hybrid buffer approach
+
+### Step 2: Analyze
+
+| Path | Pros | Cons |
+|------|------|------|
+| PostgreSQL | Familiar, ACID | Scale limits, maintenance |
+| Cassandra | Massive write scale | High operational burden |
+| DynamoDB | Low ops, auto-scale | Vendor lock-in, cost risk |
+| Redis+SQL | Fast, absorbs spikes | Complex dual-write logic |
+
+### Step 3: Simulate & Self-Correct
+*   **Draft**: Choose DynamoDB for low ops.
+*   **Critique**: How do we handle analytics queries? Dynamo cannot scan efficiently.
+*   **Refine**: Add DynamoDB Streams -> BigQuery pipeline for analytics requirements.
+
+### Step 4: Select
+**DynamoDB** - Fits the specific access pattern (Key-Value lookup by UserID) and removes operational overhead for the team.
+
 ## Resources
 
 ### references/
 
-- `tennis-phases.md`: Detailed phase requirements and biomechanics metrics
+- `database-selection-analysis.md`: Detailed trade-off analysis for high-throughput architecture
 
 ### scripts/
 
-No scripts needed - this is a reasoning framework.
+### scripts/
+
+- `decision_tracker.py`: CLI tool to log and search decision history in a local SQLite database (`.claude/thinking_history.db`).
+  - Usage: `python3 .claude/skills/system2-thinking/scripts/decision_tracker.py log ...`
+  - Usage: `python3 .claude/skills/system2-thinking/scripts/decision_tracker.py search [query]`
+  - Usage: `python3 .claude/skills/system2-thinking/scripts/decision_tracker.py add-feedback --id [ID] --content "[Feedback]"`
 
 ### assets/
 
