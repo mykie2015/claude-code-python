@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "@slidev/cli": "^52.11.3",
+    "playwright-chromium": "^1.57.0",
+    "slidev-theme-dracula": "^0.2.0"
+  },
+  "name": "skill_repo",
+  "version": "1.0.0",
+  "description": "A unified catalog of agent skills available in this workspace, organized by source repository.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mykie2015/skills_repo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mykie2015/skills_repo/issues"
+  },
+  "homepage": "https://github.com/mykie2015/skills_repo#readme"
+}
