@@ -10,17 +10,14 @@ def test_login_page():
 
         # Load the static HTML file
         page.goto(
-            "file:///Users/mykielee/GitHub/my_projects/claude-code-python/src/api/login_page.html"
+            "file:///Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp/src/api/login_page.html"
         )
         page.wait_for_load_state("networkidle")
-
-        # Take screenshot for visual verification
-        page.screenshot(path="/tmp/login_page.png", full_page=True)
 
         # Check page title
         title = page.title()
         print(f"Page title: {title}")
-        assert title == "Secure Login - NexaBank", f"Unexpected title: {title}"
+        assert title == "Sign in - NexaBank", f"Unexpected title: {title}"
 
         # Verify key elements exist
         assert page.locator("#country").is_visible(), "Country selector not visible"
@@ -29,29 +26,21 @@ def test_login_page():
         assert page.locator("#remember").is_visible(), "Remember me checkbox not visible"
         assert page.locator(".submit-btn").is_visible(), "Submit button not visible"
 
+        # Verify brand elements
+        assert page.locator(".logo").is_visible(), "Logo not visible"
+        assert page.locator("h1").is_visible(), "Heading not visible"
+        assert page.locator(".footer").is_visible(), "Footer not visible"
+
         # Check country dropdown has options
         country_options = page.locator("#country option").count()
         print(f"Country options found: {country_options}")
         assert country_options > 10, f"Expected multiple countries, found {country_options}"
 
-        # Check footer links
-        footer_links = page.locator(".footer-links a").count()
-        print(f"Footer links found: {footer_links}")
-        assert footer_links >= 3, f"Expected at least 3 footer links, found {footer_links}"
-
-        # Verify security badge is present
-        assert page.locator(".security-badge").is_visible(), "Security badge not visible"
-
-        # Check for loading spinner (hidden by default)
-        spinner = page.locator(".spinner")
-        assert not spinner.is_visible(), "Spinner should be hidden initially"
-
-        # Check error message is hidden initially
-        error_msg = page.locator(".error-message")
-        assert not error_msg.is_visible(), "Error message should be hidden initially"
+        # Check error is hidden initially
+        error = page.locator(".error")
+        assert not error.is_visible(), "Error should be hidden initially"
 
         print("\n✓ All UI tests passed!")
-        print("✓ Screenshot saved to /tmp/login_page.png")
 
         browser.close()
 

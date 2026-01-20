@@ -8,7 +8,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch(headless=False)
     page = browser.new_page()
     page.goto(
-        "file:///Users/mykielee/GitHub/my_projects/claude-code-python/src/api/login_page.html"
+        "file:///Users/mykielee/GitHub/my_projects/claude-code-python/.worktrees/auth-mvp/src/api/login_page.html"
     )
     page.wait_for_load_state("networkidle")
 

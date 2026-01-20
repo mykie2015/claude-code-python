@@ -6,11 +6,14 @@ from fastapi import APIRouter, HTTPException, Request, status
 from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr, field_validator
 
-# JWT configuration - in production, use environment variables
-SECRET_KEY = "your-secret-key-change-in-production"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-MFA_TOKEN_EXPIRE_MINUTES = 5
+from src.config import settings
+
+# Use settings from config
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+MFA_TOKEN_EXPIRE_MINUTES = settings.MFA_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -76,6 +79,64 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
+class RegisterRequest(BaseModel):
+    """Registration request."""
+
+    email: EmailStr
+    password: str
+    country_code: str
+
+    @field_validator("country_code")
+    @classmethod
+    def validate_country_code(cls, v: str) -> str:
+        if len(v) != 2:
+            raise ValueError("Country code must be 2 characters")
+        return v.upper()
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one number")
+        return v
+
+
+class RegisterResponse(BaseModel):
+    """Registration response."""
+
+    id: int
+    email: str
+    message: str = "Registration successful"
+
+
+class RefreshRequest(BaseModel):
+    """Refresh token request."""
+
+    refresh_token: str
+
+
+class RefreshResponse(BaseModel):
+    """Refresh token response."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class LogoutRequest(BaseModel):
+    """Logout request."""
+
+    refresh_token: str
+
+
+class LogoutResponse(BaseModel):
+    """Logout response."""
+
+    message: str = "Successfully logged out"
+
+
 # ============ Helper Functions ============
 
 
@@ -134,6 +195,32 @@ MOCK_USERS: dict[str, dict] = {
         "mfa_secret": None,
     },
 }
+
+# User storage for registration (in-memory for MVP)
+REGISTERED_USERS: dict[str, dict] = {}
+USER_ID_COUNTER = {"next_id": 3}  # Start after existing mock users
+
+# Refresh token storage (in-memory for MVP)
+REVOKED_REFRESH_TOKENS: set[str] = set()
+
+
+def create_refresh_token(data: dict) -> str:
+    """Create a JWT refresh token with longer expiry."""
+    to_encode = data.copy()
+    to_encode.update({"token_type": "refresh"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
+    """Decode and validate a JWT token."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
 
 
 # ============ Endpoints ============
@@ -257,3 +344,90 @@ async def verify_mfa(
         token_type="bearer",
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+
+
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"model": ErrorResponse, "description": "Email already registered or invalid input"},
+    },
+)
+async def register(request: RegisterRequest) -> RegisterResponse:
+    """Register a new user."""
+    # Check if email already exists
+    if request.email in MOCK_USERS or request.email in REGISTERED_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    # Create new user
+    user_id = USER_ID_COUNTER["next_id"]
+    USER_ID_COUNTER["next_id"] += 1
+
+    REGISTERED_USERS[request.email] = {
+        "id": user_id,
+        "email": request.email,
+        "password_hash": get_password_hash(request.password),
+        "mfa_enabled": False,
+        "mfa_secret": None,
+    }
+
+    return RegisterResponse(
+        id=user_id,
+        email=request.email,
+    )
+
+
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"model": ErrorResponse, "description": "Invalid or expired refresh token"},
+    },
+)
+async def refresh_token(request: RefreshRequest) -> RefreshResponse:
+    """Refresh access token using refresh token."""
+    # Check if token is revoked
+    if request.refresh_token in REVOKED_REFRESH_TOKENS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+        )
+
+    # Decode and validate refresh token
+    payload = decode_token(request.refresh_token)
+
+    if payload.get("token_type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type",
+        )
+
+    # Create new access token
+    access_token = create_access_token(
+        {"sub": payload.get("sub"), "user_id": payload.get("user_id")}
+    )
+
+    return RefreshResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    status_code=status.HTTP_200_OK,
+    responses={},
+)
+async def logout(request: LogoutRequest) -> LogoutResponse:
+    """Logout and revoke refresh token."""
+    # Add to revoked tokens (in-memory, grows unbounded in MVP)
+    REVOKED_REFRESH_TOKENS.add(request.refresh_token)
+
+    return LogoutResponse()
